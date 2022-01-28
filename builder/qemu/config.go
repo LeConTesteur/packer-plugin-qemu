@@ -58,6 +58,14 @@ var diskDZeroes = map[string]bool{
 	"off":   true,
 }
 
+var archiveFormat = map[string]bool{
+	"ova": true,
+	"tar": true,
+	"tgz": true,
+	"gz":  true,
+	"bz2": true,
+}
+
 type QemuImgArgs struct {
 	Convert []string `mapstructure:"convert" required:"false"`
 	Create  []string `mapstructure:"create" required:"false"`
@@ -73,6 +81,8 @@ type Config struct {
 	CommConfig                     CommConfig `mapstructure:",squash"`
 	commonsteps.FloppyConfig       `mapstructure:",squash"`
 	commonsteps.CDConfig           `mapstructure:",squash"`
+	// Specify if the file containing many files to extract
+	ArchiveContainingManyFiles bool `mapstructure:"many_files" required:"false"`
 	// Use iso from provided url. Qemu must support
 	// curl block device. This defaults to `false`.
 	ISOSkipCache bool `mapstructure:"iso_skip_cache" required:"false"`
@@ -170,6 +180,10 @@ type Config struct {
 	// You can still see the console if you make a note of the VNC display
 	// number chosen, and then connect using `vncviewer -Shared <host>:<display>`
 	Headless bool `mapstructure:"headless" required:"false"`
+	// When `iso_url` is a archive containing many disks, `disks_order` specifies
+	// the disks order to use. When `iso_url` is a simple file (compressing or not),
+	// the first element of`disks_order` specifies the name of disk.
+	DisksOrder []string `mapstructure:"disks_order" required:"false"`
 	// Packer defaults to building from an ISO file, this parameter controls
 	// whether the ISO URL supplied is actually a bootable QEMU image. When
 	// this value is set to `true`, the machine will either clone the source or
@@ -561,6 +575,10 @@ func (c *Config) Prepare(raws ...interface{}) ([]string, error) {
 		c.DiskCompression = false
 	}
 
+	if c.ArchiveContainingManyFiles {
+		c.DiskImage = true
+	}
+
 	if c.UseBackingFile {
 		c.SkipCompaction = true
 		if !(c.DiskImage && c.Format == "qcow2") {
@@ -572,6 +590,11 @@ func (c *Config) Prepare(raws ...interface{}) ([]string, error) {
 	if c.SkipResizeDisk && !(c.DiskImage) {
 		errs = packersdk.MultiErrorAppend(
 			errs, errors.New("skip_resize_disk can only be used when disk_image is true"))
+	}
+
+	if c.ArchiveContainingManyFiles && len(c.DisksOrder) == 0 {
+		errs = packersdk.MultiErrorAppend(
+			errs, errors.New("when many_files is set, disks_order must be set"))
 	}
 
 	if _, ok := accels[c.Accelerator]; !ok {

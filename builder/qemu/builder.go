@@ -46,12 +46,13 @@ func (b *Builder) Run(ctx context.Context, ui packersdk.Ui, hook packersdk.Hook)
 	steps := []multistep.Step{}
 	if !b.config.ISOSkipCache {
 		steps = append(steps, &commonsteps.StepDownload{
-			Checksum:    b.config.ISOChecksum,
-			Description: "ISO",
-			Extension:   b.config.TargetExtension,
-			ResultKey:   "iso_path",
-			TargetPath:  b.config.TargetPath,
-			Url:         b.config.ISOUrls,
+			Checksum:            b.config.ISOChecksum,
+			Description:         "ISO",
+			Extension:           b.config.TargetExtension,
+			ResultKey:           "iso_path",
+			TargetPath:          b.config.TargetPath,
+			Url:                 b.config.ISOUrls,
+			ContainingManyFiles: b.config.ArchiveContainingManyFiles,
 		})
 	} else {
 		steps = append(steps, &stepSetISO{
@@ -71,34 +72,30 @@ func (b *Builder) Run(ctx context.Context, ui packersdk.Ui, hook packersdk.Hook)
 			Content: b.config.CDConfig.CDContent,
 			Label:   b.config.CDConfig.CDLabel,
 		},
-		&stepCreateDisk{
-			AdditionalDiskSize: b.config.AdditionalDiskSize,
-			DiskImage:          b.config.DiskImage,
-			DiskSize:           b.config.DiskSize,
-			Format:             b.config.Format,
-			OutputDir:          b.config.OutputDir,
-			UseBackingFile:     b.config.UseBackingFile,
-			VMName:             b.config.VMName,
-			QemuImgArgs:        b.config.QemuImgArgs,
-		},
-		&stepCopyDisk{
+	)
+
+	steps = append(steps, &stepCreateDisk{
+		AdditionalDiskSize: b.config.AdditionalDiskSize,
+		DiskImage:          b.config.DiskImage,
+		DisksOrder:         b.config.DisksOrder,
+		DiskSize:           b.config.DiskSize,
+		Format:             b.config.Format,
+		OutputDir:          b.config.OutputDir,
+		UseBackingFile:     b.config.UseBackingFile,
+		VMName:             b.config.VMName,
+		QemuImgArgs:        b.config.QemuImgArgs,
+		ManyDisks:          b.config.ArchiveContainingManyFiles,
+	},
+		&stepResizeDisk{
 			DiskImage:      b.config.DiskImage,
 			Format:         b.config.Format,
-			OutputDir:      b.config.OutputDir,
-			UseBackingFile: b.config.UseBackingFile,
-			VMName:         b.config.VMName,
+			SkipResizeDisk: b.config.SkipResizeDisk,
+			DiskSize:       b.config.DiskSize,
+			QemuImgArgs:    b.config.QemuImgArgs,
 		},
-		&stepResizeDisk{
-			DiskCompression: b.config.DiskCompression,
-			DiskImage:       b.config.DiskImage,
-			Format:          b.config.Format,
-			OutputDir:       b.config.OutputDir,
-			SkipResizeDisk:  b.config.SkipResizeDisk,
-			VMName:          b.config.VMName,
-			DiskSize:        b.config.DiskSize,
-			QemuImgArgs:     b.config.QemuImgArgs,
-		},
-		new(stepHTTPIPDiscover),
+	)
+
+	steps = append(steps, new(stepHTTPIPDiscover),
 		commonsteps.HTTPServerFromHTTPConfig(&b.config.HTTPConfig),
 		&stepPortForward{
 			CommunicatorType: b.config.CommConfig.Comm.Type,
@@ -136,9 +133,7 @@ func (b *Builder) Run(ctx context.Context, ui packersdk.Ui, hook packersdk.Hook)
 		&stepConvertDisk{
 			DiskCompression: b.config.DiskCompression,
 			Format:          b.config.Format,
-			OutputDir:       b.config.OutputDir,
 			SkipCompaction:  b.config.SkipCompaction,
-			VMName:          b.config.VMName,
 			QemuImgArgs:     b.config.QemuImgArgs,
 		},
 	)

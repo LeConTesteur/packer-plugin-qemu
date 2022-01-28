@@ -1,11 +1,14 @@
 package qemu
 
-import "sync"
+import (
+	"sync"
+)
 
 type DriverMock struct {
 	sync.Mutex
 
 	CopyCalled bool
+	CopyCalls  []string
 	CopyErr    error
 
 	StopCalled bool
@@ -31,6 +34,7 @@ type DriverMock struct {
 
 func (d *DriverMock) Copy(source, dst string) error {
 	d.CopyCalled = true
+	d.CopyCalls = append(d.CopyCalls, source, dst)
 	return d.CopyErr
 }
 

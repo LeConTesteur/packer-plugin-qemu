@@ -1,5 +1,7 @@
 <!-- Code generated from the comments of the Config struct in builder/qemu/config.go; DO NOT EDIT MANUALLY -->
 
+- `many_files` (bool) - Specify if the file containing many files to extract
+
 - `iso_skip_cache` (bool) - Use iso from provided url. Qemu must support
   curl block device. This defaults to `false`.
 
@@ -96,6 +98,10 @@
   
   You can still see the console if you make a note of the VNC display
   number chosen, and then connect using `vncviewer -Shared <host>:<display>`
+
+- `disks_order` ([]string) - When `iso_url` is a archive containing many disks, `disks_order` specifies
+  the disks order to use. When `iso_url` is a simple file (compressing or not),
+  the first element of`disks_order` specifies the name of disk.
 
 - `disk_image` (bool) - Packer defaults to building from an ISO file, this parameter controls
   whether the ISO URL supplied is actually a bootable QEMU image. When

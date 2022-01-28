@@ -711,3 +711,40 @@ func TestBuilderPrepare_cd_content(t *testing.T) {
 		t.Fatal("cd_content empty")
 	}
 }
+
+func TestBuilderPrepare_archive_format_without_disks_order(t *testing.T) {
+	var c Config
+	config := testConfig()
+
+	config["many_files"] = true
+
+	_, err := c.Prepare(config)
+	if err == nil {
+		t.Fatal("Error with disks_order missing must be raise")
+	}
+
+}
+
+func TestBuilderPrepare_archive_format_with_disks_order(t *testing.T) {
+	var c Config
+	config := testConfig()
+
+	config["many_files"] = true
+	config["disk_image"] = false
+	config["disks_order"] = []string{
+		"disk1", "disk2",
+	}
+
+	_, err := c.Prepare(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(c.DisksOrder) != 2 {
+		t.Fatal("disks_order bad length")
+	}
+
+	if !c.DiskImage {
+		t.Fatal("DIskImage must be set when many_file is set")
+	}
+}
