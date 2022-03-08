@@ -94,3 +94,5 @@ require (
 	gopkg.in/yaml.v2 v2.3.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
+
+replace github.com/hashicorp/packer-plugin-sdk => github.com/LeConTesteur/packer-plugin-sdk v0.2.12-0.20220220165456-5d7428d76a85
